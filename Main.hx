@@ -29,6 +29,7 @@ class Main {
         p.cook("bread");
 
         trace(Jack.INHERITED_STATIC_FIELD + " acquired as people.Jack.INHERITED_STATIC_FIELD");
+
         Jack.inheritedStaticMethod();
     }//function main()
 

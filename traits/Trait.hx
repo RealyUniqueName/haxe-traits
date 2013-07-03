@@ -1,5 +1,6 @@
 package traits;
 
+import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.Context;
 import haxe.macro.Expr;
@@ -19,10 +20,10 @@ class Trait {
     * Returns current class (for using in traits code)
     *
     */
-    macro static public function cls () : Expr/* Of<Class<Dynamic>> */ {
+    macro static public function self () : Expr/* Of<Class<Dynamic>> */ {
         var cls = Context.getLocalClass().toString();
         return Context.parse(cls, Context.currentPos());
-    }//function cls()
+    }//function self()
 
 #if macro
     //traits fields
@@ -59,8 +60,9 @@ class Trait {
     *
     */
     static private inline function _save (cls:ClassType, fields:Array<Field>) : Void {
+        fields = Trait._fixTypes(fields);
         //save trait's fields map
-        __fields().set(cls.module + "." + cls.name, _fieldsMap(fields));
+        Trait.__fields().set(cls.module + "." + cls.name, _fieldsMap(fields));
     }//function _save()
 
 
@@ -71,6 +73,29 @@ class Trait {
     static private inline function _get (cls:ClassType) : FieldsMap {
         return __fields().get(cls.module + "." + cls.name);
     }//function _get()
+
+
+    /**
+    * Insert full classnames instead of imported shortened (by imports) names
+    *
+    */
+    static private function _fixTypes (fields:Array<Field>) : Array<Field> {
+        var fixed : Array<Field> = [];
+
+        for(f in fields){
+            f = Trait._copyField(f);
+            //in bodies of functions replace shortened types
+            switch(f.kind){
+                //method
+                case FFun(f): f.expr = ExprTools.map(f.expr, Trait._fixExpr);
+                //other
+                case _:
+            }//switch(kind)
+            fixed.push(f);
+        }
+
+        return fixed;
+    }//function _fixTypes()
 
 
     /**
@@ -108,10 +133,6 @@ class Trait {
 
             //interface is not allowed to have static fields
             if( field.access.has(AStatic) ) {
-                // switch(field.kind){
-                //     case FFun(f): _fixExpr(f.expr);
-                //     case _:
-                // }
                 continue;
             }
 
@@ -223,123 +244,58 @@ class Trait {
     }//function _copyFunction()
 
 
-    // /**
-    // * Replace short types with full types
-    // *
-    // */
-    // static private function _fixExpr (expr:Expr) : Void {
-    //     if( expr == null ) return;
-    //     _fixExprDef(expr.expr);
-    // }//function _fixExpr()
+    /**
+    * Replace short types with full types
+    *
+    */
+    static private function _fixExpr (expr:Expr) : Expr {
+        switch(expr.expr){
+            //found identifier
+            case EConst(CIdent(ident)):
+                var typeExpr : Expr = Trait._resolveType(ident, expr.pos);
+                if( typeExpr != null ){
+                    return typeExpr;
+                }
+
+            //new object creation
+            case ENew(t,_):
+                var typeExpr : Expr = Trait._resolveType(t.name, expr.pos);
+                if( typeExpr != null ){
+                    return typeExpr;
+                }
+
+            //other expressions
+            case _:
+                return ExprTools.map(expr, Trait._fixExpr);
+        }
+
+        return expr;
+    }//function _fixExpr()
 
 
-    // /**
-    // * Replace short types with full types
-    // *
-    // */
-    // static private function _fixExprDef (exprDef:ExprDef) : Void {
-    //     switch(exprDef){
-    //         case EWhile(econd,e,normalWhile):
-    //             _fixExpr(econd);
-    //             _fixExpr(e);
-    //         case EVars(vars):
-    //             for(v in vars){
-    //                 _fixExpr(v.expr);
-    //             }
-    //         case EUntyped(e):
-    //             _fixExpr(e);
-    //         case EUnop(op,postFix,e):
-    //             _fixExpr(e);
-    //         case ETry(e,catches):
-    //             _fixExpr(e);
-    //             for(c in catches){
-    //                 _fixExpr(c.expr);
-    //             }
-    //         case EThrow(e):
-    //             _fixExpr(e);
-    //         case ETernary(econd,eif,eelse):
-    //             _fixExpr(econd);
-    //             _fixExpr(eif);
-    //             _fixExpr(eelse);
-    //         case ESwitch(e,cases,edef):
-    //             _fixExpr(e);
-    //             for(c in cases){
-    //                 for(v in c.values){
-    //                     _fixExprDef(v.expr);
-    //                 }
-    //                 _fixExpr(c.guard);
-    //                 _fixExpr(c.expr);
-    //             }
-    //             _fixExpr(edef);
-    //         case EReturn(e):
-    //             _fixExpr(e);
-    //         case EParenthesis(e):
-    //             _fixExpr(e);
-    //         case EObjectDecl(fields):
-    //             for(f in fields){
-    //                 _fixExpr(f.expr);
-    //             }
-    //         case ENew(t,params):
-    //             for(e in params){
-    //                 _fixExpr(e);
-    //             }
-    //         case EMeta(s,e):
-    //             _fixExpr(e);
-    //         case EIn(e1,e2):
-    //             _fixExpr(e1);
-    //             _fixExpr(e2);
-    //         case EIf(econd,eif,eelse):
-    //             _fixExpr(econd);
-    //             _fixExpr(eif);
-    //             _fixExpr(eelse);
-    //         case EFunction(name,f):
-    //             _fixExpr(f.expr);
-    //         case EFor(it,expr):
-    //             _fixExpr(it);
-    //             _fixExpr(expr);
-    //         case EField(e,field):
-    //             _fixExpr(e);
-    //         case EDisplayNew(t):
-    //         case EDisplay(e,isCall):
-    //             _fixExpr(e);
-    //         case EContinue:
-    //         //replace short type with full type
-    //         case EConst(c):
-    //             switch(c){
-    //                 case CIdent(t):
-    //                     switch(Context.getType(t)){
-    //                         case TInst(t,p):
-    //                             trace(Context.parse(t.toString(), Context.currentPos()));
-    //                         case _:
-    //                     }
-    //                 case _:
-    //             }
-    //         case ECheckType(e,t):
-    //             _fixExpr(e);
-    //         case ECast(e,t):
-    //             _fixExpr(e);
-    //         case ECall(e,params):
-    //             _fixExpr(e);
-    //             for(p in params){
-    //                 _fixExpr(p);
-    //             }
-    //         case EBreak:
-    //         case EBlock(exprs):
-    //             for(e in exprs){
-    //                 _fixExpr(e);
-    //             }
-    //         case EBinop(op,e1,e2):
-    //             _fixExpr(e1);
-    //             _fixExpr(e2);
-    //         case EArrayDecl(values):
-    //             for(e in values){
-    //                 _fixExpr(e);
-    //             }
-    //         case EArray(e1,e2):
-    //             _fixExpr(e1);
-    //             _fixExpr(e2);
-    //     }
-    // }//function _fixExprDef()
+    /**
+    * Get expression with full class path for specified identifier
+    *
+    */
+    static private function _resolveType (type:String, pos:Position) : Expr {
+        var t : Type = null;
+        try{
+            t = Context.getType(type);
+        }catch(e:Dynamic){
+            return null;
+        }
+
+        return  switch(t){
+            case TMono(t)       : Context.parse(t.toString(), pos);
+            case TEnum(t,_)     : Context.parse(t.toString(), pos);
+            case TInst(t,_)     : Context.parse(t.toString(), pos);
+            case TType(t,_)     : Context.parse(t.toString(), pos);
+            case TAnonymous(t)  : Context.parse(t.toString(), pos);
+            case TAbstract(t,_) : Context.parse(t.toString(), pos);
+            case _              : null;
+        }
+    }//function _resolveType()
+
 
 #end
 }//class Trait

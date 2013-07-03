@@ -11,6 +11,7 @@ import people.Person.EGender;
 */
 class Jack extends Person implements TChef implements TPostman{
 
+
 /*******************************************************************************
 *       STATIC METHODS
 *******************************************************************************/
