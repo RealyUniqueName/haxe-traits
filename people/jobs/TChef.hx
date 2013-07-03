@@ -11,6 +11,8 @@ import traits.Trait;
 *
 */
 interface TChef extends ITrait{
+    /** pretty obvious */
+    static public inline var SOME_VAR : Int = 10;
 
     /**
     * Check static methods
@@ -19,6 +21,9 @@ interface TChef extends ITrait{
     static public function inheritedStaticMethod () : Void {
         //here is how to know current context class
         var cls : Class<TChef> = Trait.self();
+
+        //also this is allowed
+        var inc : Int = Trait.self().SOME_VAR + 1;
 
         trace("I am called from " + Type.getClassName(cls));
     }//function inheritedStaticMethod()
