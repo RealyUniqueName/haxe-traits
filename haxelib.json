@@ -1,0 +1,11 @@
+{
+    "name"         : "traits",
+    "url"          : "https://github.com/RealyUniqueName/haxe-traits",
+    "license"      : "MIT",
+    "tags"         : ["cross", "traits", "multiple inheritance"],
+    "description"  : "Traits for Haxe",
+    "version"      : "0.9.0",
+    "releasenote"  : "Initial release",
+    "contributors" : ["RealyUniqueName"],
+    "dependencies" : {}
+}

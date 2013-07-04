@@ -1,3 +1,4 @@
+*.zip
 build/*
 .hxsublime_tmp/*
 examples/*/test.n
