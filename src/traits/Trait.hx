@@ -71,6 +71,7 @@ class Trait {
     /** if class implements several traits, compiler will call `build` for such class several times. */
     static private var _processed : Map<String,Bool> = new Map();
 
+
     /**
     * Get `_fields` object
     *
