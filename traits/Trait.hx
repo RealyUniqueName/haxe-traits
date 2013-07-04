@@ -68,7 +68,8 @@ class Trait {
 #if macro
     //traits fields
     static private var _fields : TraitsMap;
-
+    /** if class implements several traits, compiler will call `build` for such class several times. */
+    static private var _processed : Map<String,Bool> = new Map();
 
     /**
     * Get `_fields` object
@@ -152,7 +153,14 @@ class Trait {
             fields = _processTrait(cls, fields);
 
         //trait descendant
-        }else{
+        }else{    
+
+            //to prevent processing one class several times
+            if( _processed.exists(cls.module + "." + cls.name) ){
+                return fields;
+            }
+            _processed.set(cls.module + "." + cls.name, true);
+
             fields = _processDescendant(cls, fields);
         }
 
