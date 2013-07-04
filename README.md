@@ -12,10 +12,11 @@ Features:
 * Ability to "override" trait's methods
 
 
-Tips:
+Hints:
 ----
 * Access descendant class in trait's code via [`traits.Trait.self()`](https://github.com/RealyUniqueName/haxe-traits/blob/master/examples/all_in_one/people/jobs/TChef.hx#L20)
 * In overriden methods call "super" methods via [`traits.Trat.parent(TTraitClass).someMethod()`](https://github.com/RealyUniqueName/haxe-traits/blob/master/examples/all_in_one/people/Jack.hx#L44) (like `super.someMethod()` for normal inheritance)
+* In trait's code you can access fields, which are not declared in trait, but will be declared in descendant class [example](https://github.com/RealyUniqueName/haxe-traits/blob/master/examples/all_in_one/people/jobs/TPostman.hx#L24)
 
 
 Installation:
