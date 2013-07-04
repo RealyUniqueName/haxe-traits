@@ -14,5 +14,5 @@ Features:
 Tips:
 ----
 * Access descendant class in trait's code via [`traits.Trait.self()`](https://github.com/RealyUniqueName/haxe-traits/blob/master/examples/all_in_one/people/jobs/TChef.hx#L21)
-* Call "super" methods via [`traits.Trat.parent(TTraitClass).someMethod()`](https://github.com/RealyUniqueName/haxe-traits/blob/master/examples/all_in_one/people/Jack.hx#L44) (like `super.someMethod()` for normal inheritance)
+* In overriden methods call "super" methods via [`traits.Trat.parent(TTraitClass).someMethod()`](https://github.com/RealyUniqueName/haxe-traits/blob/master/examples/all_in_one/people/Jack.hx#L44) (like `super.someMethod()` for normal inheritance)
 
