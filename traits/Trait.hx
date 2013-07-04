@@ -25,6 +25,46 @@ class Trait {
         return Context.parse(cls, Context.currentPos());
     }//function self()
 
+
+    /**
+    * For `super` calls emulation
+    *
+    * @param cls - one of traits classes
+    */
+    macro static public function parent (traitCls:Expr) : Expr {
+        var trait : String = switch(traitCls.expr){
+            case EConst(CIdent(t)): t;
+            case EField(_,t): t;
+            case _: null;
+        }
+        if( trait == null ){
+            throw "Trait.parent() accepts only names of classes";
+        }
+
+        var currentClass = Context.getLocalClass();
+
+        //check current class implements that trait {
+            var hasThisTrait : Bool = false;
+
+            for(int in currentClass.get().interfaces){
+                if( int.t.get().name == trait ){
+                    if( Trait._get(int.t.get()) == null ){
+                        throw int.t.toString() + " is not a trait";
+                    }
+                    hasThisTrait = true;
+                    break;
+                }
+            }
+
+            if( !hasThisTrait ){
+                throw currentClass.toString() + " does not implement " + trait;
+            }
+        //}
+
+        return Context.parse('cast(this, $trait)', Context.currentPos());
+    }//function parent()
+
+
 #if macro
     //traits fields
     static private var _fields : TraitsMap;

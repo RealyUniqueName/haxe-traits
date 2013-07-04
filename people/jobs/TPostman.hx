@@ -26,4 +26,13 @@ interface TPostman extends ITrait{
         trace(this.name + " sent your message: '" + message + "' from "+ this.town);
     }//function send()
 
+
+    /**
+    * "Pack" message
+    *
+    */
+    public function pack (message:String) : String {
+        return "[" + message + "]";
+    }//function pack()
+
 }//interface TPostman
