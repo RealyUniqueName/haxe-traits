@@ -7,7 +7,7 @@ import traits.Trait;
 
 
 /**
-* Postman job
+* Chef job
 *
 */
 interface TChef extends ITrait{

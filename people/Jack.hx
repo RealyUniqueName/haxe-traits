@@ -42,11 +42,15 @@ class Jack extends Person implements TChef implements TPostman {
 
 
     /**
-    * Override TPostman.send method
+    * Override TPostman.send method.
+    * Send packed message
     *
     */
     public function send (message:String) : Void {
-        Trait.parent(TPostman).pack(message);
+//         message = this.pack(message);
+// return;
+        traits.Trait.parent(people.jobs.TPostman).send(message);
+        // this._people_jobs_TPostman_send(message);
     }//function send()
 
 /*******************************************************************************

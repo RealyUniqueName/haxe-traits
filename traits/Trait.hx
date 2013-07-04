@@ -43,7 +43,7 @@ class Trait {
 
         var currentClass = Context.getLocalClass();
 
-        //check current class implements that trait {
+        //ensure current class implements that trait {
             var hasThisTrait : Bool = false;
 
             for(int in currentClass.get().interfaces){
@@ -205,8 +205,8 @@ class Trait {
         //trait field structure
         var tfield : Field;
 
-        for(i in cls.interfaces){
-            tfm = _get(i.t.get());
+        for(trait in cls.interfaces){
+            tfm = _get(trait.t.get());
 
             //need to add trait fields
             if( tfm != null ){
@@ -224,11 +224,13 @@ class Trait {
                             case _:
                                 fields.push(_copyField(tfield));
                         }//switch(tfield.kind)
-                    //descendant hase such field. Check compatibility
+                    //descendant has such field.
                     }else{
+                        //Check compatibility
                         if( !_fieldsMatch(dfield, tfield) ){
-                            Context.error(cls.name + "." + dfield.name + " type does not match " + i.t.toString() + "." + tfield.name, Context.currentPos());
+                            Context.error(cls.name + "." + dfield.name + " type does not match " + trait.t.toString() + "." + tfield.name, Context.currentPos());
                         }
+                        _handleParentCalls(cls, trait.t, dfield);
                     }
                 }//for()
 
@@ -336,6 +338,58 @@ class Trait {
         }
     }//function _resolveType()
 
+
+    /**
+    * Replace all `Trait.parent(TSomeTrait).someMethod` with corresponding function 
+    * calls to emulate `super.someMethod` behavior
+    *
+    */
+    static private function _handleParentCalls (cls:ClassType, trait:Ref<ClassType>, field:Field) : Void {
+        #if display
+            return;
+        #end
+
+        switch(field.kind){
+            case FFun(f): 
+                if( field.name == "send" ) {                                    
+                    f.expr = ExprTools.map(f.expr, _replaceParentCalls);
+                }
+            case _:
+        }
+    }//function _handleParentCalls()
+
+
+    /**
+    * Function for ExprTools.map() to replace `Trait.parent(TSomeTrait).someMethod`
+    *
+    */
+    static private function _replaceParentCalls (expr:Expr) : Expr {
+        switch(expr.expr){
+            case ECall({expr:EField(e,field),pos:pos},p):                 
+            // trace(field);
+                if( _isParentCall(e) ){
+                    trace("yes!");
+                }
+                return {expr:expr.expr, pos:expr.pos};
+            case _: 
+                return expr;//ExprTools.map(expr, _replaceParentCalls);
+        }
+    }//function _replaceParentCalls()
+
+
+    /**
+    * Check if this ExprDef is `Trait.parent()` call
+    *
+    */
+    static private function _isParentCall (e:Expr) : Bool {        
+        return switch(e.expr){
+            case EField({expr:EConst(CIdent("traits")),pos:pos},"Trait") : true;
+            case EField(e,field)         : (_isParentCall(e) && field == "parent" );
+            case ECall(e,_)              : _isParentCall(e);
+            case EConst(CIdent("Trait")) : true;            
+            case _                       : false;
+        }
+    }//function _isParentCall()
 
 #end
 }//class Trait
