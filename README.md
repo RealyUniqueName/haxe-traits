@@ -33,7 +33,7 @@ interface TWorker extends traits.ITrait{
 }
 ```
 ```Haxe
-interface TWReader extends traits.ITrait{
+interface TReader extends traits.ITrait{
     public function read() : Void {
         trace("I'm reading!");
     }
