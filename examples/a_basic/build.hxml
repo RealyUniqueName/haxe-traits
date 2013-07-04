@@ -1,0 +1,4 @@
+-cp ../../src
+-main Main
+-neko test.n
+-cmd neko test.n

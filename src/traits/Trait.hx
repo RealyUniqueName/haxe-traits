@@ -16,6 +16,7 @@ private typedef TraitsMap = Map<String,FieldsMap>;
 *
 */
 class Trait {
+
     /**
     * Returns current class (for using in traits code)
     *
