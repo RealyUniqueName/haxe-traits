@@ -27,7 +27,7 @@ class Trait {
 
 
     /**
-    * For `super` calls emulation
+    * For `super.parentMethod()` calls emulation
     *
     * @param cls - one of traits classes
     */
@@ -153,7 +153,7 @@ class Trait {
             fields = _processTrait(cls, fields);
 
         //trait descendant
-        }else{    
+        }else{
 
             //to prevent processing one class several times
             if( _processed.exists(cls.module + "." + cls.name) ){
@@ -187,7 +187,14 @@ class Trait {
             //remove bodies from methods
             switch(field.kind){
                 //method
-                case FFun(f): f.expr = null;
+                case FFun(fn):
+                    fn.expr = null;
+
+                    //create field for ".parent" calls
+                    var pField : Field = _copyField(f);
+                    pField.name = "_" + StringTools.replace(Context.getLocalClass().toString(), ".", "_") + "_" + pField.name;
+                    _get(cls).set(pField.name, pField);
+
                 //other
                 case _:
             }//switch(kind)
@@ -347,8 +354,19 @@ class Trait {
     }//function _resolveType()
 
 
+    /** the trait, whis is being processed right now */
+    static private var _trait : Ref<ClassType>;
+    // /** the trait, whis is being processed right now */
+    // static private var _cls : ClassType;
+    // /** fields of that class */
+    // static private var _clsFields : Array<Field>;
+    // /** current class field */
+    // static private var _dield : Field;
+    // /** current trait field */
+    // static private var _tfield : Field;
+
     /**
-    * Replace all `Trait.parent(TSomeTrait).someMethod` with corresponding function 
+    * Replace all `Trait.parent(TSomeTrait).someMethod` with corresponding function
     * calls to emulate `super.someMethod` behavior
     *
     */
@@ -357,11 +375,11 @@ class Trait {
             return;
         #end
 
+        _trait = trait;
+
         switch(field.kind){
-            case FFun(f): 
-                if( field.name == "send" ) {                                    
-                    f.expr = ExprTools.map(f.expr, _replaceParentCalls);
-                }
+            case FFun(f):
+                f.expr = ExprTools.map(f.expr, _replaceParentCalls);
             case _:
         }
     }//function _handleParentCalls()
@@ -373,13 +391,20 @@ class Trait {
     */
     static private function _replaceParentCalls (expr:Expr) : Expr {
         switch(expr.expr){
-            case ECall({expr:EField(e,field),pos:pos},p):                 
-            // trace(field);
+            case ECall({expr:EField(e,f),pos:pos},p):
                 if( _isParentCall(e) ){
-                    trace("yes!");
+                    var superField : String = "_" + StringTools.replace(_trait.toString(), ".", "_") + "_";
+                    return {
+                        expr:ECall({
+                            expr:EField({expr:EConst(CIdent("this")), pos:pos}, superField + f),
+                            pos : pos
+                        },
+                        p),
+                        pos:pos
+                    };
                 }
                 return {expr:expr.expr, pos:expr.pos};
-            case _: 
+            case _:
                 return expr;//ExprTools.map(expr, _replaceParentCalls);
         }
     }//function _replaceParentCalls()
@@ -389,12 +414,12 @@ class Trait {
     * Check if this ExprDef is `Trait.parent()` call
     *
     */
-    static private function _isParentCall (e:Expr) : Bool {        
+    static private function _isParentCall (e:Expr) : Bool {
         return switch(e.expr){
             case EField({expr:EConst(CIdent("traits")),pos:pos},"Trait") : true;
             case EField(e,field)         : (_isParentCall(e) && field == "parent" );
             case ECall(e,_)              : _isParentCall(e);
-            case EConst(CIdent("Trait")) : true;            
+            case EConst(CIdent("Trait")) : true;
             case _                       : false;
         }
     }//function _isParentCall()
