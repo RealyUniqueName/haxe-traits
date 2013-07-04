@@ -1,6 +1,5 @@
 package people.jobs;
 
-import haxe.xml.Fast;
 import traits.ITrait;
 import traits.Trait;
 
