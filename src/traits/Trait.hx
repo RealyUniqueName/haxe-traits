@@ -192,10 +192,12 @@ class Trait {
                 case FFun(fn):
                     fn.expr = null;
 
-                    //create field for ".parent" calls
-                    var pField : Field = _copyField(f);
-                    pField.name = "_" + StringTools.replace(Context.getLocalClass().toString(), ".", "_") + "_" + pField.name;
-                    _get(cls).set(pField.name, pField);
+                    #if !display
+                        //create field for ".parent" calls
+                        var pField : Field = _copyField(f);
+                        pField.name = "_" + StringTools.replace(Context.getLocalClass().toString(), ".", "_") + "_" + pField.name;
+                        _get(cls).set(pField.name, pField);
+                    #end
 
                 //other
                 case _:
