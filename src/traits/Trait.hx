@@ -191,11 +191,13 @@ class Trait {
                 //method
                 case FFun(fn):
                     fn.expr = null;
+                    field.access.remove(AOverride);
 
                     #if !display
                         //create field for ".parent" calls
                         var pField : Field = _copyField(f);
                         pField.name = "_" + StringTools.replace(Context.getLocalClass().toString(), ".", "_") + "_" + pField.name;
+                        pField.access.remove(AOverride);
                         _get(cls).set(pField.name, pField);
                     #end
                 //var
@@ -282,7 +284,7 @@ class Trait {
         return {
             name   : field.name,
             doc    : field.doc,
-            access : field.access,
+            access : field.access.copy(),
             kind   : switch(field.kind){
                 //method
                 case FFun(f): FFun(_copyFunction(f));
