@@ -74,6 +74,16 @@ class Trait {
 
 
     /**
+    * Clear cache of processed traits
+    *
+    */
+    static public function clearCache () : Void {
+        _fields    = new Map();
+        _processed = new Map();
+    }//function clearCache()
+
+
+    /**
     * Get `_fields` object
     *
     */
