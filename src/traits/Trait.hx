@@ -198,6 +198,9 @@ class Trait {
                         pField.name = "_" + StringTools.replace(Context.getLocalClass().toString(), ".", "_") + "_" + pField.name;
                         _get(cls).set(pField.name, pField);
                     #end
+                //var
+                case FVar(t,e):
+                    field.kind = FVar(t,null);
 
                 //other
                 case _:
@@ -360,14 +363,6 @@ class Trait {
 
     /** the trait, whis is being processed right now */
     static private var _trait : Ref<ClassType>;
-    // /** the trait, whis is being processed right now */
-    // static private var _cls : ClassType;
-    // /** fields of that class */
-    // static private var _clsFields : Array<Field>;
-    // /** current class field */
-    // static private var _dield : Field;
-    // /** current trait field */
-    // static private var _tfield : Field;
 
     /**
     * Replace all `Trait.parent(TSomeTrait).someMethod` with corresponding function
