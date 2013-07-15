@@ -202,6 +202,7 @@ class Trait {
                 case FFun(fn):
                     fn.expr = null;
                     field.access.remove(AOverride);
+                    field.access.remove(AInline);
 
                     #if !display
                         //create field for ".parent" calls
@@ -256,7 +257,9 @@ class Trait {
                                 if( f.expr != null ) fields.push(_copyField(tfield));
                             //other
                             case _:
-                                fields.push(_copyField(tfield));
+                                var f = _copyField(tfield);
+                                fields.push(f);
+                                dfm.set(f.name, f);
                         }//switch(tfield.kind)
                     //descendant has such field.
                     }else{
