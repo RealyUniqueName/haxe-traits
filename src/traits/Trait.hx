@@ -144,6 +144,11 @@ class Trait {
             switch(f.kind){
                 //method
                 case FFun(f): f.expr = ExprTools.map(f.expr, Trait._fixExpr);
+				for (a in f.args) {
+					if (a.type == null) continue;
+					var type = a.type.toType();
+					a.type = type == null ? null : TypeTools.toComplexType(type);
+				}
                 //other
                 case _:
             }//switch(kind)
