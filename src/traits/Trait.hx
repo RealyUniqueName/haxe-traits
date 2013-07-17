@@ -373,13 +373,15 @@ class Trait {
 					}
                 }
 				return expr;
-
-            //other expressions
+				
+			case EVars(vars):
+				
+				for (v in vars) v.type = Trait._fixComplexType(v.type);
+            
             case _:
-                return ExprTools.map(expr, Trait._fixExpr);
         }
-
-        return expr;
+		//other expressions
+        return ExprTools.map(expr, Trait._fixExpr);
     }//function _fixExpr()
 
 	inline static private function getHaxePath(base:BaseType):String {
