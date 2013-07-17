@@ -144,11 +144,10 @@ class Trait {
             switch(f.kind){
                 //method
                 case FFun(f): f.expr = ExprTools.map(f.expr, Trait._fixExpr);
-				for (a in f.args) {
-					if (a.type == null) continue;
-					var type = a.type.toType();
-					a.type = type == null ? null : TypeTools.toComplexType(type);
-				}
+				
+				for (a in f.args) a.type = _fixComplexType(a.type);
+				
+				Trait._fixTypeParams(f.params);
                 //other
                 case _:
             }//switch(kind)
@@ -158,6 +157,25 @@ class Trait {
         return fixed;
     }//function _fixTypes()
 
+	static function _fixComplexType(ct:ComplexType):ComplexType {
+		return if (ct == null)
+				null;
+			else {
+				var type = null;
+				try { 
+					type = ct.toType();
+				} catch (e:Dynamic) {}
+				type == null ? null : TypeTools.toComplexType(type);
+			}
+	}
+	
+	static function _fixTypeParams(params:Array<TypeParamDecl>) {
+		for (p in params) {
+			for (i in 0...p.constraints.length)
+				p.constraints[i] = Trait._fixComplexType(p.constraints[i]);
+			_fixTypeParams(p.params);
+		}
+	}
 
     /**
     * Build traits / add trait fields to classes
