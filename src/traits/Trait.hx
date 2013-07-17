@@ -187,7 +187,7 @@ class Trait {
     static private function _processTrait (cls:ClassRef, fields:Array<Field>) : Array<Field> {
         _save(cls, fields);
         var _fields : Array<Field> = [];
-
+		fields = _get(cls).array();
         for(f in fields){
             var field : Field = _copyField(f);
 
