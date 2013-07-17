@@ -10,7 +10,7 @@ using Lambda;
 private typedef FieldsMap = Map<String,Field>;
 private typedef TraitsMap = Map<String,FieldsMap>;
 
-
+typedef ClassRef = {module:String, name:String}
 /**
 * Всякие разные утилиты для кодогенерации
 *
@@ -112,7 +112,7 @@ class Trait {
     * Save trait fields
     *
     */
-    static private inline function _save (cls:ClassType, fields:Array<Field>) : Void {
+    static private inline function _save (cls:ClassRef, fields:Array<Field>) : Void {
         fields = Trait._fixTypes(fields);
         //save trait's fields map
         Trait.__fields().set(cls.module + "." + cls.name, _fieldsMap(fields));
@@ -123,7 +123,7 @@ class Trait {
     * Get trait fields map
     *
     */
-    static private inline function _get (cls:ClassType) : FieldsMap {
+    static private inline function _get (cls:ClassRef) : FieldsMap {
         return __fields().get(cls.module + "." + cls.name);
     }//function _get()
 
@@ -173,7 +173,7 @@ class Trait {
             }
             _processed.set(cls.module + "." + cls.name, true);
 
-            fields = _processDescendant(cls, fields);
+            fields = _processDescendant(cls, [for (i in cls.interfaces) i.t], fields);
         }
 
         return fields;
@@ -184,7 +184,7 @@ class Trait {
     * Process trait
     *
     */
-    static private function _processTrait (cls:ClassType, fields:Array<Field>) : Array<Field> {
+    static private function _processTrait (cls:ClassRef, fields:Array<Field>) : Array<Field> {
         _save(cls, fields);
         var _fields : Array<Field> = [];
 
@@ -230,7 +230,7 @@ class Trait {
     * Process trait descendant
     *
     */
-    static private function _processDescendant (cls:ClassType, fields:Array<Field>) : Array<Field> {
+    static private function _processDescendant (cls:ClassRef, interfaces:Array<Ref<ClassType>>, fields:Array<Field>) : Array<Field> {
         //descendant fields map
         var dfm : FieldsMap = _fieldsMap(fields);
         //trait fields map
@@ -240,8 +240,8 @@ class Trait {
         //trait field structure
         var tfield : Field;
 
-        for(trait in cls.interfaces){
-            tfm = _get(trait.t.get());
+        for(trait in interfaces){
+            tfm = _get(trait.get());
 
             //need to add trait fields
             if( tfm != null ){
@@ -265,9 +265,9 @@ class Trait {
                     }else{
                         //Check compatibility
                         if( !_fieldsMatch(dfield, tfield) ){
-                            Context.error(cls.name + "." + dfield.name + " type does not match " + trait.t.toString() + "." + tfield.name, Context.currentPos());
+                            Context.error(cls.name + "." + dfield.name + " type does not match " + trait + "." + tfield.name, Context.currentPos());
                         }
-                        _handleParentCalls(cls, trait.t, dfield);
+                        _handleParentCalls(trait, dfield);
                     }
                 }//for()
 
@@ -384,7 +384,7 @@ class Trait {
     * calls to emulate `super.someMethod` behavior
     *
     */
-    static private function _handleParentCalls (cls:ClassType, trait:Ref<ClassType>, field:Field) : Void {
+    static private function _handleParentCalls (trait:Ref<ClassType>, field:Field) : Void {
         #if display
             return;
         #end
