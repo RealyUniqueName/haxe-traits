@@ -1,11 +1,14 @@
 package traits;
 
+import haxe.ds.StringMap.StringMap;
 import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.TypeTools;
 
 using Lambda;
+using haxe.macro.Tools;
 
 private typedef FieldsMap = Map<String,Field>;
 private typedef TraitsMap = Map<String,FieldsMap>;
@@ -331,17 +334,22 @@ class Trait {
         switch(expr.expr){
             //found identifier
             case EConst(CIdent(ident)):
-                var typeExpr : Expr = Trait._resolveType(ident, expr.pos);
-                if( typeExpr != null ){
-                    return typeExpr;
+                var type : BaseType = Trait._resolveType(ident);
+                if ( type != null ) {
+                    return Context.parse(getHaxePath(type), expr.pos);
                 }
 
             //new object creation
-            case ENew(t,_):
-                var typeExpr : Expr = Trait._resolveType(t.name, expr.pos);
-                if( typeExpr != null ){
-                    return typeExpr;
+            case ENew(t, params):
+                var type : Type = Trait._getType(t.name); trace((type));
+                if ( type != null ) {
+					var ct:ComplexType = type.toComplexType();
+					switch (ct) {
+						case TPath(p): return {expr : ENew(p, params), pos: expr.pos};
+						case _:
+					}
                 }
+				return expr;
 
             //other expressions
             case _:
@@ -351,29 +359,38 @@ class Trait {
         return expr;
     }//function _fixExpr()
 
+	inline static private function getHaxePath(base:BaseType):String {
+		return if (base.module.length > 0)
+				base.module + "." + base.name;
+			else base.name;
+	}
 
+	static private function _getType(type:String) : Type {
+		var t : Type = null;
+		try{
+			t = Context.getType(type);
+		}catch (e:Dynamic) { }
+		return t;
+	}
+	
+	static private function _getBaseType(type:Type):BaseType {
+		return switch(type){
+            case TMono(t): if (t != null) Trait._getBaseType(t.get()); else null;
+			case TEnum(t, _): t.get();
+			case TInst(t, _): t.get();
+			case TType(t, _): t.get();
+			case TAbstract(t,_): t.get();
+            case _: null;
+        }
+	}
     /**
     * Get expression with full class path for specified identifier
     *
     */
-    static private function _resolveType (type:String, pos:Position) : Expr {
-        var t : Type = null;
-        try{
-            t = Context.getType(type);
-        }catch(e:Dynamic){
-            return null;
-        }
-
-        return  switch(t){
-            case TMono(t)       : Context.parse(t.toString(), pos);
-            case TEnum(t,_)     : Context.parse(t.toString(), pos);
-            case TInst(t,_)     : Context.parse(t.toString(), pos);
-            case TType(t,_)     : Context.parse(t.toString(), pos);
-            case TAnonymous(t)  : Context.parse(t.toString(), pos);
-            case TAbstract(t,_) : Context.parse(t.toString(), pos);
-            case _              : null;
-        }
-    }//function _resolveType()
+    inline static private function _resolveType (type:String) : BaseType {
+		var type:Type = Trait._getType(type);
+		return if (type != null) _getBaseType(type); else null;
+    }//function _resolveType()*/
 
 
     /** the trait, whis is being processed right now */
