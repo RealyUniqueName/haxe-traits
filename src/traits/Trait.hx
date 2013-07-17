@@ -341,7 +341,7 @@ class Trait {
 
             //new object creation
             case ENew(t, params):
-                var type : Type = Trait._getType(t.name); trace((type));
+                var type : Type = Trait._getType(t.name);
                 if ( type != null ) {
 					var ct:ComplexType = type.toComplexType();
 					switch (ct) {
