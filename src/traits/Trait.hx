@@ -379,6 +379,20 @@ class Trait {
 			case EVars(vars):
 				
 				for (v in vars) v.type = Trait._fixComplexType(v.type);
+				
+			case ECheckType(e, t):
+				
+				e = ExprTools.map(e, Trait._fixExpr);
+				return { expr:ECheckType(e, Trait._fixComplexType(t)), pos:expr.pos };
+				
+			case ECast(e, t):
+				
+				e = ExprTools.map(e, Trait._fixExpr);
+				return { expr:ECast(e, Trait._fixComplexType(t)), pos:expr.pos };
+				
+			case ETry(e, catches):
+				
+				for (c in catches) c.type = Trait._fixComplexType(c.type);
             
             case _:
         }
