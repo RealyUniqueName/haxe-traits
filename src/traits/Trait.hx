@@ -148,6 +148,8 @@ class Trait {
 				for (a in f.args) a.type = _fixComplexType(a.type);
 				
 				Trait._fixTypeParams(f.params);
+				
+				Trait._fixComplexType(f.ret);
                 //other
                 case _:
             }//switch(kind)
