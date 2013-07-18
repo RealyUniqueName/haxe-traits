@@ -329,6 +329,12 @@ class Trait {
                     return {expr:ENew(type,params), pos:expr.pos};
                 }
 
+            //typed cast
+            case ECast(e,t):
+                e = ExprTools.map(e, Trait._fixExpr);
+                t = Trait._fixComplexType(t);
+                return {expr:ECast(e,t),pos:expr.pos};
+
             //var declaration
             case EVars(vars):
                 var fixed : Array<Var> = [];
