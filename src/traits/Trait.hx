@@ -10,7 +10,8 @@ import haxe.macro.TypeTools;
 using Lambda;
 
 private typedef FieldsMap    = Map<String,Field>;
-private typedef TraitsMap    = Map<String,FieldsMap>;
+private typedef TraitFields  = {self:FieldsMap,additional:Array<Field>};
+private typedef TraitsMap    = Map<String,TraitFields>;
 private typedef ClassRef     = {module:String, name:String};
 private typedef InterfaceRef = {t:Ref<ClassType>, params:Array<Type>};
 
@@ -136,7 +137,8 @@ class Trait {
     *
     */
     static private inline function _save (cls:ClassRef, fields:Array<Field>) : Void {
-        var fixed : Array<Field> = [];
+        var fixed   : Array<Field> = [];
+        var pFields : Array<Field> = [];
 
         for(f in fields){
             f = Trait._copyField(f);
@@ -159,9 +161,9 @@ class Trait {
                     #if !display
                         //create field for "Trait.parent()" calls
                         var pField : Field = Trait._copyField(f);
-                        pField.name = "_" + StringTools.replace(Trait.classpath(cls), ".", "_") + "_" + pField.name;
+                        pField.name = Trait._getParentFieldName(cls, pField.name);
                         pField.access.remove(AOverride);
-                        fixed.push(pField);
+                        pFields.push(pField);
                     #end
                 //variables
                 case FVar(t,e):
@@ -174,15 +176,24 @@ class Trait {
         }
 
         //save trait's fields map
-        Trait.__fields().set(Trait.classpath(cls), _fieldsMap(fixed));
+        Trait.__fields().set(Trait.classpath(cls), {self:_fieldsMap(fixed),additional:pFields});
     }//function _save()
+
+
+    /**
+    * Generate field name to use in "Trait.parent()" calls
+    *
+    */
+    static private inline function _getParentFieldName (cls:ClassRef, fieldName:String) : String {
+        return "__" + StringTools.replace(Trait.classpath(cls), ".", "_") + "_" + fieldName;
+    }//function _getParentFieldName()
 
 
     /**
     * Get trait fields map
     *
     */
-    static private inline function _get (cls:ClassRef) : FieldsMap {
+    static private inline function _get (cls:ClassRef) : TraitFields {
         return __fields().get(Trait.classpath(cls));
     }//function _get()
 
@@ -234,7 +245,7 @@ class Trait {
         //descendant fields map
         var dfm : FieldsMap = _fieldsMap(fields);
         //trait fields map
-        var tfm : FieldsMap;
+        var tfm : TraitFields;
         //source field structure
         var dfield : Field;
         //trait field structure
@@ -245,10 +256,10 @@ class Trait {
 
             //need to add trait fields
             if( tfm != null ){
-
-                for(fname in tfm.keys()){
+                //real fields
+                for(fname in tfm.self.keys()){
                     dfield = dfm.get(fname);
-                    tfield = tfm.get(fname);
+                    tfield = tfm.self.get(fname);
                     //if descendant does not have such field, copy trait field
                     if( dfield == null ){
                         switch(tfield.kind){
@@ -270,6 +281,11 @@ class Trait {
                         _handleParentCalls(cls, trait.t, dfield);
                     }
                 }//for()
+
+                //additional generated fields
+                for(tfield in tfm.additional){
+                    fields.push(tfield);
+                }
 
             }//if( tfm != null )
         }//for(interfaces)
@@ -354,10 +370,13 @@ class Trait {
         switch(expr.expr){
             case ECall({expr:EField(e,f),pos:pos},p):
                 if( _isParentCall(e) ){
-                    var superField : String = "_" + StringTools.replace(_trait.toString(), ".", "_") + "_";
+                    var superField : String = "__" + StringTools.replace(Trait.classpath(_trait.get()), ".", "_") + "_";
                     return {
                         expr:ECall({
-                            expr:EField({expr:EConst(CIdent("this")), pos:pos}, superField + f),
+                            expr:EField(
+                                {expr:EConst(CIdent("this")), pos:pos},
+                                Trait._getParentFieldName(_trait.get(), f)
+                            ),
                             pos : pos
                         },
                         p),
