@@ -7,8 +7,10 @@ import haxe.macro.Expr;
 
 using Lambda;
 
-private typedef FieldsMap = Map<String,Field>;
-private typedef TraitsMap = Map<String,FieldsMap>;
+private typedef FieldsMap    = Map<String,Field>;
+private typedef TraitsMap    = Map<String,FieldsMap>;
+private typedef ClassRef     = {module:String, name:String};
+private typedef InterfaceRef = {t:Ref<ClassType>, params:Array<Type>};
 
 
 /**
@@ -66,6 +68,15 @@ class Trait {
     }//function parent()
 
 
+    /**
+    * Return classpath for cls
+    *
+    */
+    static public inline function classpath (cls:ClassRef) : String {
+        return cls.module + "." + cls.name;
+    }//function classpath()
+
+
 #if macro
     //traits fields
     static private var _fields : TraitsMap;
@@ -112,10 +123,10 @@ class Trait {
     * Save trait fields
     *
     */
-    static private inline function _save (cls:ClassType, fields:Array<Field>) : Void {
+    static private inline function _save (cls:ClassRef, fields:Array<Field>) : Void {
         fields = Trait._fixTypes(fields);
         //save trait's fields map
-        Trait.__fields().set(cls.module + "." + cls.name, _fieldsMap(fields));
+        Trait.__fields().set(Trait.classpath(cls), _fieldsMap(fields));
     }//function _save()
 
 
@@ -123,8 +134,8 @@ class Trait {
     * Get trait fields map
     *
     */
-    static private inline function _get (cls:ClassType) : FieldsMap {
-        return __fields().get(cls.module + "." + cls.name);
+    static private inline function _get (cls:ClassRef) : FieldsMap {
+        return __fields().get(Trait.classpath(cls));
     }//function _get()
 
 
@@ -168,12 +179,12 @@ class Trait {
         }else{
 
             //to prevent processing one class several times
-            if( _processed.exists(cls.module + "." + cls.name) ){
+            if( _processed.exists(Trait.classpath(cls)) ){
                 return fields;
             }
-            _processed.set(cls.module + "." + cls.name, true);
+            _processed.set(Trait.classpath(cls), true);
 
-            fields = _processDescendant(cls, fields);
+            fields = _processDescendant(cls, cls.interfaces, fields);
         }
 
         return fields;
@@ -184,7 +195,7 @@ class Trait {
     * Process trait
     *
     */
-    static private function _processTrait (cls:ClassType, fields:Array<Field>) : Array<Field> {
+    static private function _processTrait (cls:ClassRef, fields:Array<Field>) : Array<Field> {
         _save(cls, fields);
         var _fields : Array<Field> = [];
 
@@ -207,7 +218,7 @@ class Trait {
                     #if !display
                         //create field for ".parent" calls
                         var pField : Field = _copyField(f);
-                        pField.name = "_" + StringTools.replace(Context.getLocalClass().toString(), ".", "_") + "_" + pField.name;
+                        pField.name = "_" + StringTools.replace(Trait.classpath(cls), ".", "_") + "_" + pField.name;
                         pField.access.remove(AOverride);
                         _get(cls).set(pField.name, pField);
                     #end
@@ -230,7 +241,7 @@ class Trait {
     * Process trait descendant
     *
     */
-    static private function _processDescendant (cls:ClassType, fields:Array<Field>) : Array<Field> {
+    static private function _processDescendant (cls:ClassRef, interfaces:Array<InterfaceRef>, fields:Array<Field>) : Array<Field> {
         //descendant fields map
         var dfm : FieldsMap = _fieldsMap(fields);
         //trait fields map
@@ -240,7 +251,7 @@ class Trait {
         //trait field structure
         var tfield : Field;
 
-        for(trait in cls.interfaces){
+        for(trait in interfaces){
             tfm = _get(trait.t.get());
 
             //need to add trait fields
@@ -384,7 +395,7 @@ class Trait {
     * calls to emulate `super.someMethod` behavior
     *
     */
-    static private function _handleParentCalls (cls:ClassType, trait:Ref<ClassType>, field:Field) : Void {
+    static private function _handleParentCalls (cls:ClassRef, trait:Ref<ClassType>, field:Field) : Void {
         #if display
             return;
         #end
