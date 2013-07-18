@@ -124,9 +124,30 @@ class Trait {
     *
     */
     static private inline function _save (cls:ClassRef, fields:Array<Field>) : Void {
-        fields = Trait._fixTypes(fields);
+        var fixed : Array<Field> = [];
+
+        for(f in fields){
+            f = Trait._copyField(f);
+            switch(f.kind){
+                //method
+                case FFun(fn):
+                    //replace imported types with full types
+                    fn.expr = ExprTools.map(fn.expr, Trait._fixExpr);
+                    #if !display
+                        //create field for ".parent" calls
+                        var pField : Field = Trait._copyField(f);
+                        pField.name = "_" + StringTools.replace(Trait.classpath(cls), ".", "_") + "_" + pField.name;
+                        pField.access.remove(AOverride);
+                        fixed.push(pField);
+                    #end
+                //other
+                case _:
+            }//switch(kind)
+            fixed.push(f);
+        }
+
         //save trait's fields map
-        Trait.__fields().set(Trait.classpath(cls), _fieldsMap(fields));
+        Trait.__fields().set(Trait.classpath(cls), _fieldsMap(fixed));
     }//function _save()
 
 
@@ -137,29 +158,6 @@ class Trait {
     static private inline function _get (cls:ClassRef) : FieldsMap {
         return __fields().get(Trait.classpath(cls));
     }//function _get()
-
-
-    /**
-    * Insert full classnames instead of imported shortened (by imports) names
-    *
-    */
-    static private function _fixTypes (fields:Array<Field>) : Array<Field> {
-        var fixed : Array<Field> = [];
-
-        for(f in fields){
-            f = Trait._copyField(f);
-            //in bodies of functions replace shortened types
-            switch(f.kind){
-                //method
-                case FFun(f): f.expr = ExprTools.map(f.expr, Trait._fixExpr);
-                //other
-                case _:
-            }//switch(kind)
-            fixed.push(f);
-        }
-
-        return fixed;
-    }//function _fixTypes()
 
 
     /**
@@ -215,13 +213,6 @@ class Trait {
                     field.access.remove(AOverride);
                     field.access.remove(AInline);
 
-                    #if !display
-                        //create field for ".parent" calls
-                        var pField : Field = _copyField(f);
-                        pField.name = "_" + StringTools.replace(Trait.classpath(cls), ".", "_") + "_" + pField.name;
-                        pField.access.remove(AOverride);
-                        _get(cls).set(pField.name, pField);
-                    #end
                 //var
                 case FVar(t,e):
                     field.kind = FVar(t,null);
