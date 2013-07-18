@@ -140,10 +140,7 @@ class Trait {
                         for (a in fn.args) a.type = Trait._fixComplexType(a.type);
                         //type parameters
                         for(i in 0...fn.params.length){
-                            fn.params[i].constraints = [
-                                for(j in 0...fn.params[i].constraints.length)
-                                    Trait._fixComplexType(fn.params[i].constraints[j])
-                            ];
+                            Trait._fixTypeParam(fn.params[i]);
                         }
                     //}
 
@@ -383,6 +380,20 @@ class Trait {
             name   : type.name
         }
     }//function _fixTypePath()
+
+
+    /**
+    * Fix types in type parameters (Array<SomeClass<OtherClass>>)
+    *
+    */
+    static private function _fixTypeParam (param:TypeParamDecl) : Void {
+        for(i in 0...param.params.length){
+            Trait._fixTypeParam(param.params[i]);
+        }
+        for(i in 0...param.constraints.length){
+            param.constraints[i] = Trait._fixComplexType(param.constraints[i]);
+        }
+    }//function _fixTypeParam()
 
 
     /**
