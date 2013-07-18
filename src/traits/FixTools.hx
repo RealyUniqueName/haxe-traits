@@ -39,6 +39,9 @@ class FixTools {
             //new object creation
             case ENew(t,params):
                 var type : TypePath = FixTools.fixTypePath(t);
+                for(i in 0...params.length){
+                    params[i] = FixTools.fixExpr(params[i]);
+                }
                 if( type != null ){
                     return {expr:ENew(type,params), pos:expr.pos};
                 }
@@ -54,6 +57,7 @@ class FixTools {
                 e = FixTools.fixExpr(e);
                 for(c in catches){
                     c.type = FixTools.fixComplexType(c.type);
+                    c.expr = FixTools.fixExpr(c.expr);
                 }
                 return {expr:ETry(e,catches), pos:expr.pos};
 
