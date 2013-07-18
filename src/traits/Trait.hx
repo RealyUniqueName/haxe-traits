@@ -142,6 +142,8 @@ class Trait {
                         for(i in 0...fn.params.length){
                             Trait._fixTypeParam(fn.params[i]);
                         }
+                        //function type
+                        fn.ret = Trait._fixComplexType(fn.ret);
                     //}
 
                     #if !display
