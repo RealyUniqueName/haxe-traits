@@ -71,6 +71,16 @@ class Trait {
 
 
     /**
+    * Trace ExprDef of this expression
+    *
+    */
+    @:noCompletion macro static public function showExpr (e:Expr) : Expr {
+        trace(e.expr);
+        return e;
+    }//function showExpr()
+
+
+    /**
     * Return classpath for cls
     *
     */
@@ -331,9 +341,17 @@ class Trait {
 
             //typed cast
             case ECast(e,t):
-                e = ExprTools.map(e, Trait._fixExpr);
+                e = Trait._fixExpr(e);
                 t = Trait._fixComplexType(t);
                 return {expr:ECast(e,t),pos:expr.pos};
+
+            //try...catch
+            case ETry(e,catches):
+                e = Trait._fixExpr(e);
+                for(c in catches){
+                    c.type = Trait._fixComplexType(c.type);
+                }
+                return {expr:ETry(e,catches), pos:expr.pos};
 
             //var declaration
             case EVars(vars):
