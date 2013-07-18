@@ -75,6 +75,13 @@ class Trait {
     *
     */
     @:noCompletion macro static public function showExpr (e:Expr) : Expr {
+    //     var t = { name : "Test", pack : ["some"], params : [] };
+    //     trace(
+    //         ExprTools.toString({
+    //             expr:ECheckType(e,TPath(t)),
+    //             pos : Context.currentPos()
+    //         })
+    //     );
         trace(e.expr);
         return e;
     }//function showExpr()
@@ -145,7 +152,7 @@ class Trait {
                 case FFun(fn):
                     //replace imported types with full types {
                         //function body
-                        fn.expr = ExprTools.map(fn.expr, Trait._fixExpr);
+                        fn.expr = Trait._fixExpr(fn.expr);
                         //arguments
                         for (a in fn.args) a.type = Trait._fixComplexType(a.type);
                         //type parameters
@@ -352,6 +359,12 @@ class Trait {
                     c.type = Trait._fixComplexType(c.type);
                 }
                 return {expr:ETry(e,catches), pos:expr.pos};
+
+            //Macro thing: http://haxe.1354130.n2.nabble.com/Type-parameter-substitution-tp6966489p6967899.html
+            case ECheckType(e,t):
+                e = Trait._fixExpr(e);
+                t = Trait._fixComplexType(t);
+                return {expr:ECheckType(e,t),pos:expr.pos};
 
             //var declaration
             case EVars(vars):
