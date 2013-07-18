@@ -89,7 +89,7 @@ class FixTools {
     * Get type with full package
     *
     */
-    static public function fixTypePath (type:TypePath) : TypePath {
+    static public inline function fixTypePath (type:TypePath) : TypePath {
         return {
             sub    : type.sub,
             params : type.params,
@@ -149,7 +149,7 @@ class FixTools {
     * Get complex type with full package
     *
     */
-    static public function fixComplexType (ct:ComplexType) : ComplexType {
+    static public inline function fixComplexType (ct:ComplexType) : ComplexType {
         if (ct == null){
             return null;
         }else{
