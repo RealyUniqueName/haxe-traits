@@ -1,9 +1,11 @@
 package traits;
 
+import haxe.macro.ComplexTypeTools;
 import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.TypeTools;
 
 using Lambda;
 
@@ -133,8 +135,15 @@ class Trait {
                 case FFun(fn):
                     //replace imported types with full types
                     fn.expr = ExprTools.map(fn.expr, Trait._fixExpr);
+
+                    for (a in fn.args) {
+                        if (a.type == null) continue;
+                        var type = ComplexTypeTools.toType(a.type);
+                        a.type = (type == null ? null : TypeTools.toComplexType(type));
+                    }
+
                     #if !display
-                        //create field for ".parent" calls
+                        //create field for "Trait.parent()" calls
                         var pField : Field = Trait._copyField(f);
                         pField.name = "_" + StringTools.replace(Trait.classpath(cls), ".", "_") + "_" + pField.name;
                         pField.access.remove(AOverride);
