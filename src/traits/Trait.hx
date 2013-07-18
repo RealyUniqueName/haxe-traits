@@ -75,13 +75,6 @@ class Trait {
     *
     */
     @:noCompletion macro static public function showExpr (e:Expr) : Expr {
-    //     var t = { name : "Test", pack : ["some"], params : [] };
-    //     trace(
-    //         ExprTools.toString({
-    //             expr:ECheckType(e,TPath(t)),
-    //             pos : Context.currentPos()
-    //         })
-    //     );
         trace(e.expr);
         return e;
     }//function showExpr()
@@ -152,15 +145,15 @@ class Trait {
                 case FFun(fn):
                     //replace imported types with full types {
                         //function body
-                        fn.expr = Trait._fixExpr(fn.expr);
+                        fn.expr = FixTools.fixExpr(fn.expr);
                         //arguments
-                        for (a in fn.args) a.type = Trait._fixComplexType(a.type);
+                        for (a in fn.args) a.type = FixTools.fixComplexType(a.type);
                         //type parameters
                         for(i in 0...fn.params.length){
-                            Trait._fixTypeParam(fn.params[i]);
+                            FixTools.fixTypeParam(fn.params[i]);
                         }
                         //function type
-                        fn.ret = Trait._fixComplexType(fn.ret);
+                        fn.ret = FixTools.fixComplexType(fn.ret);
                     //}
 
                     #if !display
@@ -170,8 +163,12 @@ class Trait {
                         pField.access.remove(AOverride);
                         fixed.push(pField);
                     #end
-                //other
-                case _:
+                //variables
+                case FVar(t,e):
+                    f.kind = FVar(FixTools.fixComplexType(t), FixTools.fixExpr(e));
+                //properties
+                case FProp(get,set,t,e):
+                    f.kind = FProp(get, set, FixTools.fixComplexType(t), FixTools.fixExpr(e));
             }//switch(kind)
             fixed.push(f);
         }
@@ -326,144 +323,7 @@ class Trait {
     }//function _copyFunction()
 
 
-    /**
-    * Replace short types with full types
-    *
-    */
-    static private function _fixExpr (expr:Expr) : Expr {
-        switch(expr.expr){
-            //found identifier
-            case EConst(CIdent(ident)):
-                var type : Ref<BaseType> = Trait._resolveType(ident);
-                if( type != null ){
-                    return Context.parse(type.toString(), expr.pos);
-                }
-
-            //new object creation
-            case ENew(t,params):
-                var type : TypePath = Trait._fixTypePath(t);
-                if( type != null ){
-                    return {expr:ENew(type,params), pos:expr.pos};
-                }
-
-            //typed cast
-            case ECast(e,t):
-                e = Trait._fixExpr(e);
-                t = Trait._fixComplexType(t);
-                return {expr:ECast(e,t),pos:expr.pos};
-
-            //try...catch
-            case ETry(e,catches):
-                e = Trait._fixExpr(e);
-                for(c in catches){
-                    c.type = Trait._fixComplexType(c.type);
-                }
-                return {expr:ETry(e,catches), pos:expr.pos};
-
-            //Macro thing: http://haxe.1354130.n2.nabble.com/Type-parameter-substitution-tp6966489p6967899.html
-            case ECheckType(e,t):
-                e = Trait._fixExpr(e);
-                t = Trait._fixComplexType(t);
-                return {expr:ECheckType(e,t),pos:expr.pos};
-
-            //var declaration
-            case EVars(vars):
-                var fixed : Array<Var> = [];
-                for(v in vars){
-                    fixed.push({
-                        name : v.name,
-                        expr : (v.expr == null ? null : Trait._fixExpr(v.expr)),
-                        type : Trait._fixComplexType(v.type)
-                    });
-                }
-                return {expr:EVars(fixed),pos:expr.pos};
-            //other expressions
-            case _:
-                return ExprTools.map(expr, Trait._fixExpr);
-        }
-
-        return expr;
-    }//function _fixExpr()
-
-
-    /**
-    * Get full type for specified imported type name
-    *
-    */
-    static private function _resolveType (name:String) : Ref<BaseType> {
-        var type : Type = null;
-        try{
-            type = Context.getType(name);
-        }catch(e:Dynamic){
-            return null;
-        }
-
-        return Trait._getTypeRef(type);
-    }//function _resolveType()
-
-
-    /**
-    * Get Ref instance for specified type
-    *
-    */
-    static private function _getTypeRef (type:Type) : Ref<BaseType> {
-        return switch(type){
-            case TMono(t)       : if( t == null ) null else _getTypeRef(t.get());
-            case TEnum(t,_)     : t;
-            case TInst(t,_)     : t;
-            case TType(t,_)     : t;
-            case TAbstract(t,_) : t;
-            case _              : null;
-        }
-    }//function _getTypeRef()
-
-
-    /**
-    * Get type with full package
-    *
-    */
-    static private function _fixTypePath (type:TypePath) : TypePath {
-        return {
-            sub    : type.sub,
-            params : type.params,
-            pack   : Trait._resolveType(type.name).get().pack,
-            name   : type.name
-        }
-    }//function _fixTypePath()
-
-
-    /**
-    * Fix types in type parameters (Array<SomeClass<OtherClass>>)
-    *
-    */
-    static private function _fixTypeParam (param:TypeParamDecl) : Void {
-        for(i in 0...param.params.length){
-            Trait._fixTypeParam(param.params[i]);
-        }
-        for(i in 0...param.constraints.length){
-            param.constraints[i] = Trait._fixComplexType(param.constraints[i]);
-        }
-    }//function _fixTypeParam()
-
-
-    /**
-    * Get complex type with full package
-    *
-    */
-    static private function _fixComplexType (ct:ComplexType) : ComplexType {
-        if (ct == null){
-            return null;
-        }else{
-            try {
-                return TypeTools.toComplexType( ComplexTypeTools.toType(ct) );
-            } catch (e:Dynamic) {
-                return ct;
-            }
-        }
-    }//function _fixComplexType()
-
-
-    /** the trait, whis is being processed right now */
+    /** the trait, which is being processed right now */
     static private var _trait : Ref<ClassType>;
 
     /**

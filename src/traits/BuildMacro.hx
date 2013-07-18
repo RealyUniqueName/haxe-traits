@@ -28,7 +28,7 @@ class BuildMacro {
     * Build traits / add trait fields to classes
     *
     */
-    macro static public function build() : Array<Field> {
+    @:noCompletion macro static public function build() : Array<Field> {
         var pos    = Context.currentPos();
         var cls    = Context.getLocalClass().get();
         var fields = Context.getBuildFields();
