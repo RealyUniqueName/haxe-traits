@@ -143,15 +143,20 @@ class Trait {
             //in bodies of functions replace shortened types
             switch(f.kind){
                 //method
-                case FFun(f): f.expr = ExprTools.map(f.expr, Trait._fixExpr);
+                case FFun(f): 
+					
+					f.expr = ExprTools.map(f.expr, Trait._fixExpr);
 				
-				for (a in f.args) a.type = _fixComplexType(a.type);
+					for (a in f.args) a.type = _fixComplexType(a.type);
+					Trait._fixTypeParams(f.params);
+					Trait._fixComplexType(f.ret);
+                
 				
-				Trait._fixTypeParams(f.params);
-				
-				Trait._fixComplexType(f.ret);
-                //other
-                case _:
+				case FVar(t, e):
+					f.kind = FVar(Trait._fixComplexType(t), e);
+					
+				case FProp(get, set, t, e):
+					f.kind = FProp(get, set, Trait._fixComplexType(t), e);
             }//switch(kind)
             fixed.push(f);
         }
