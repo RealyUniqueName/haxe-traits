@@ -42,9 +42,7 @@ class FixTools {
                 for(i in 0...params.length){
                     params[i] = FixTools.fixExpr(params[i]);
                 }
-                if( type != null ){
-                    return {expr:ENew(type,params), pos:expr.pos};
-                }
+                return {expr:ENew((type == null ? t : type),params), pos:expr.pos};
 
             //typed cast
             case ECast(e,t):
