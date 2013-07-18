@@ -327,6 +327,17 @@ class Trait {
                     return {expr:ENew(type,params), pos:expr.pos};
                 }
 
+            //var declaration
+            case EVars(vars):
+                var fixed : Array<Var> = [];
+                for(v in vars){
+                    fixed.push({
+                        name : v.name,
+                        expr : (v.expr == null ? null : Trait._fixExpr(v.expr)),
+                        type : Trait._fixComplexType(v.type)
+                    });
+                }
+                return {expr:EVars(fixed),pos:expr.pos};
             //other expressions
             case _:
                 return ExprTools.map(expr, Trait._fixExpr);
