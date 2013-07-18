@@ -73,7 +73,7 @@ class Trait {
     *
     */
     static public inline function classpath (cls:ClassRef) : String {
-        return cls.module + "." + cls.name;
+        return (cls.module.length > 0 ? cls.module + "." : "") + cls.name;
     }//function classpath()
 
 
@@ -158,35 +158,6 @@ class Trait {
     static private inline function _get (cls:ClassRef) : FieldsMap {
         return __fields().get(Trait.classpath(cls));
     }//function _get()
-
-
-    /**
-    * Build traits / add trait fields to classes
-    *
-    */
-    macro static public function build() : Array<Field> {
-        var pos    = Context.currentPos();
-        var cls    = Context.getLocalClass().get();
-        var fields = Context.getBuildFields();
-
-        //trait
-        if( cls.isInterface ){
-            fields = _processTrait(cls, fields);
-
-        //trait descendant
-        }else{
-
-            //to prevent processing one class several times
-            if( _processed.exists(Trait.classpath(cls)) ){
-                return fields;
-            }
-            _processed.set(Trait.classpath(cls), true);
-
-            fields = _processDescendant(cls, cls.interfaces, fields);
-        }
-
-        return fields;
-    }//function build()
 
 
     /**
@@ -333,16 +304,16 @@ class Trait {
         switch(expr.expr){
             //found identifier
             case EConst(CIdent(ident)):
-                var typeExpr : Expr = Trait._resolveType(ident, expr.pos);
-                if( typeExpr != null ){
-                    return typeExpr;
+                var type : Ref<BaseType> = Trait._resolveType(ident);
+                if( type != null ){
+                    return Context.parse(type.toString(), expr.pos);
                 }
 
             //new object creation
-            case ENew(t,_):
-                var typeExpr : Expr = Trait._resolveType(t.name, expr.pos);
-                if( typeExpr != null ){
-                    return typeExpr;
+            case ENew(t,params):
+                var type : TypePath = Trait._resolveTypePath(t);
+                if( type != null ){
+                    return {expr:ENew(type,params), pos:expr.pos};
                 }
 
             //other expressions
@@ -355,27 +326,49 @@ class Trait {
 
 
     /**
-    * Get expression with full class path for specified identifier
+    * Get full type for specified imported type name
     *
     */
-    static private function _resolveType (type:String, pos:Position) : Expr {
-        var t : Type = null;
+    static private function _resolveType (name:String) : Ref<BaseType> {
+        var type : Type = null;
         try{
-            t = Context.getType(type);
+            type = Context.getType(name);
         }catch(e:Dynamic){
             return null;
         }
 
-        return  switch(t){
-            case TMono(t)       : Context.parse(t.toString(), pos);
-            case TEnum(t,_)     : Context.parse(t.toString(), pos);
-            case TInst(t,_)     : Context.parse(t.toString(), pos);
-            case TType(t,_)     : Context.parse(t.toString(), pos);
-            case TAnonymous(t)  : Context.parse(t.toString(), pos);
-            case TAbstract(t,_) : Context.parse(t.toString(), pos);
+        return Trait._getTypeRef(type);
+    }//function _resolveType()
+
+
+    /**
+    * Get Ref instance for specified type
+    *
+    */
+    static private function _getTypeRef (type:Type) : Ref<BaseType> {
+        return switch(type){
+            case TMono(t)       : if( t == null ) null else _getTypeRef(t.get());
+            case TEnum(t,_)     : t;
+            case TInst(t,_)     : t;
+            case TType(t,_)     : t;
+            case TAbstract(t,_) : t;
             case _              : null;
         }
-    }//function _resolveType()
+    }//function _getTypeRef()
+
+
+    /**
+    * Get type with full package
+    *
+    */
+    static private function _resolveTypePath (type:TypePath) : TypePath {
+        return {
+            sub    : type.sub,
+            params : type.params,
+            pack   : Trait._resolveType(type.name).get().pack,
+            name   : type.name
+        }
+    }//function _resolveTypePath()
 
 
     /** the trait, whis is being processed right now */
