@@ -133,14 +133,19 @@ class Trait {
             switch(f.kind){
                 //method
                 case FFun(fn):
-                    //replace imported types with full types
-                    fn.expr = ExprTools.map(fn.expr, Trait._fixExpr);
-
-                    for (a in fn.args) {
-                        if (a.type == null) continue;
-                        var type = ComplexTypeTools.toType(a.type);
-                        a.type = (type == null ? null : TypeTools.toComplexType(type));
-                    }
+                    //replace imported types with full types {
+                        //function body
+                        fn.expr = ExprTools.map(fn.expr, Trait._fixExpr);
+                        //arguments
+                        for (a in fn.args) a.type = Trait._fixComplexType(a.type);
+                        //type parameters
+                        for(i in 0...fn.params.length){
+                            fn.params[i].constraints = [
+                                for(j in 0...fn.params[i].constraints.length)
+                                    Trait._fixComplexType(fn.params[i].constraints[j])
+                            ];
+                        }
+                    //}
 
                     #if !display
                         //create field for "Trait.parent()" calls
@@ -320,7 +325,7 @@ class Trait {
 
             //new object creation
             case ENew(t,params):
-                var type : TypePath = Trait._resolveTypePath(t);
+                var type : TypePath = Trait._fixTypePath(t);
                 if( type != null ){
                     return {expr:ENew(type,params), pos:expr.pos};
                 }
@@ -370,14 +375,31 @@ class Trait {
     * Get type with full package
     *
     */
-    static private function _resolveTypePath (type:TypePath) : TypePath {
+    static private function _fixTypePath (type:TypePath) : TypePath {
         return {
             sub    : type.sub,
             params : type.params,
             pack   : Trait._resolveType(type.name).get().pack,
             name   : type.name
         }
-    }//function _resolveTypePath()
+    }//function _fixTypePath()
+
+
+    /**
+    * Get complex type with full package
+    *
+    */
+    static private function _fixComplexType (ct:ComplexType) : ComplexType {
+        if (ct == null){
+            return null;
+        }else{
+            try {
+                return TypeTools.toComplexType( ComplexTypeTools.toType(ct) );
+            } catch (e:Dynamic) {
+                return ct;
+            }
+        }
+    }//function _fixComplexType()
 
 
     /** the trait, whis is being processed right now */
