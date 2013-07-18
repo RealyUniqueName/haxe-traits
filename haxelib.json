@@ -4,8 +4,8 @@
     "license"      : "MIT",
     "tags"         : ["cross", "traits", "multiple inheritance", "classic abstract"],
     "description"  : "Traits for Haxe",
-    "version"      : "0.9.4",
-    "releasenote"  : "Bugfix for similar fields in different traits used for one descendant",
+    "version"      : "0.9.5",
+    "releasenote"  : "Various improvemens in type handling",
     "contributors" : ["RealyUniqueName"],
     "dependencies" : {}
 }
