@@ -385,7 +385,7 @@ class Trait {
                 }
                 return {expr:expr.expr, pos:expr.pos};
             case _:
-                return expr;//ExprTools.map(expr, _replaceParentCalls);
+                return ExprTools.map(expr, _replaceParentCalls);
         }
     }//function _replaceParentCalls()
 
