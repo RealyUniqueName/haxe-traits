@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.TypeTools;
+import traits.FixTools;
 
 using Lambda;
 
@@ -159,11 +160,13 @@ class Trait {
                     //}
 
                     #if !display
-                        //create field for "Trait.parent()" calls
-                        var pField : Field = Trait._copyField(f);
-                        pField.name = Trait._getParentFieldName(cls, pField.name);
-                        pField.access.remove(AOverride);
-                        pFields.push(pField);
+                        //create field for "Trait.parent()" calls for traits' methods with bodies
+                        if( fn.expr != null ){
+                            var pField : Field = Trait._copyField(f);
+                            pField.name = Trait._getParentFieldName(cls, pField.name);
+                            pField.access.remove(AOverride);
+                            pFields.push(pField);
+                        }
                     #end
                 //variables
                 case FVar(t,e):
@@ -279,6 +282,7 @@ class Trait {
                             Context.error(cls.name + "." + dfield.name + " type does not match " + trait.t.toString() + "." + tfield.name, Context.currentPos());
                         }
                         _handleParentCalls(cls, trait.t, dfield);
+                // if( fname == "tryToMove" && cls.name == "GoblinChar" && trait.t.toString() == "maze.traits.TWalker" ) trace(dfield);
                     }
                 }//for()
 
@@ -370,16 +374,22 @@ class Trait {
         switch(expr.expr){
             case ECall({expr:EField(e,f),pos:pos},p):
                 if( _isParentCall(e) ){
-                    var superField : String = "__" + StringTools.replace(Trait.classpath(_trait.get()), ".", "_") + "_";
+                    //find referenced trait
+                    var trait : Ref<BaseType> = switch(e.expr){
+                        case ECall(e,[{expr:EConst(CIdent(t)), pos:_}]): FixTools.resolveType(t);
+                        case _:
+                    }
                     return {
-                        expr:ECall({
-                            expr:EField(
-                                {expr:EConst(CIdent("this")), pos:pos},
-                                Trait._getParentFieldName(_trait.get(), f)
-                            ),
-                            pos : pos
-                        },
-                        p),
+                        expr:ECall(
+                            {
+                                expr:EField(
+                                    {expr:EConst(CIdent("this")), pos:pos},
+                                    Trait._getParentFieldName(trait.get(), f)
+                                ),
+                                pos : pos
+                            },
+                            p
+                        ),
                         pos:pos
                     };
                 }
