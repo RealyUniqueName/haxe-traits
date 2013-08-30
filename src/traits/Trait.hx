@@ -229,8 +229,12 @@ class Trait {
                 case FVar(t,e):
                     field.kind = FVar(t,null);
 
-                //other
-                case _:
+                //property
+                case FProp(get,set,t,e):
+                    field.kind = FProp(get,set,t,null);
+
+                // //other
+                // case _:
             }//switch(kind)
 
             _fields.push(field);

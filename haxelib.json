@@ -4,8 +4,8 @@
     "license"      : "MIT",
     "tags"         : ["cross", "traits", "multiple inheritance", "classic abstract"],
     "description"  : "Traits for Haxe",
-    "version"      : "0.9.7",
-    "releasenote"  : "Bugfix for Trait.parent() calls for several traits with similar methods",
+    "version"      : "0.9.8",
+    "releasenote"  : "Bugfix for properties with default values",
     "contributors" : ["RealyUniqueName"],
     "dependencies" : {}
 }
