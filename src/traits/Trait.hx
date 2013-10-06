@@ -155,8 +155,13 @@ class Trait {
                         for(i in 0...fn.params.length){
                             FixTools.fixTypeParam(fn.params[i]);
                         }
-                        //function type
-                        fn.ret = FixTools.fixComplexType(fn.ret);
+                        //constructor can't have a return value
+                        if( f.name == 'new' ){
+                            fn.ret = null;
+                        }else{
+                            //function type
+                            fn.ret = FixTools.fixComplexType(fn.ret);
+                        }
                     //}
 
                     #if !display
@@ -214,6 +219,11 @@ class Trait {
 
             //interface is not allowed to have static fields
             if( field.access.has(AStatic) ) {
+                continue;
+            }
+
+            //interface is not allowed to have a constructor
+            if( field.name == 'new' ){
                 continue;
             }
 
