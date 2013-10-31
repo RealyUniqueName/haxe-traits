@@ -44,7 +44,6 @@ class BuildMacro {
             if( Trait._processed.exists(Trait.classpath(cls)) ){
                 return fields;
             }
-            Trait._processed.set(Trait.classpath(cls), true);
 
             fields = Trait._processDescendant(cls, cls.interfaces, fields);
         }

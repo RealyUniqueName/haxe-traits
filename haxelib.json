@@ -4,8 +4,8 @@
     "license"      : "MIT",
     "tags"         : ["cross", "traits", "multiple inheritance", "classic abstract"],
     "description"  : "Traits for Haxe",
-    "version"      : "0.9.9",
-    "releasenote"  : "Trait interface can describe a constructor now",
+    "version"      : "0.9.10",
+    "releasenote"  : "'Classic' static fields inheritance",
     "contributors" : ["RealyUniqueName"],
     "dependencies" : {}
 }

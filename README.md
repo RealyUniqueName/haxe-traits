@@ -6,7 +6,7 @@ This macro allows to reuse code in different classes, which can't extend each ot
 
 Features:
 ----
-* Static vars / methods inheritance (even inlined)
+* Static vars / methods inheritance (even inlined).
 * Multiple inheritance
 * "Lazy" interfaces: traits methods are copied to descendant class, so you don't need to write implementation in each class, which implements trait. But you still can skip implementation of some methods in trait to force each descendant implement these methods (It's a sort of "classic" abstracts from Java or PHP)
 * Ability to "override" trait's methods
@@ -47,5 +47,3 @@ class Test implements TWorker implements TReader {
     }
 }
 ```
-
-

@@ -9,17 +9,64 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.TypeTools;
 
+using Lambda;
 
 /**
 * Various helpers for traits processing
 *
 */
+@:access(traits.Trait)
 class FixTools {
 
 
 /*******************************************************************************
 *       STATIC METHODS
 *******************************************************************************/
+
+    /**
+    * Fix types in static fields and return an array of static fields
+    *
+    */
+    static public function fixStatics (fields:Array<Field>) : Array<Field> {
+        var statics : Array<Field> = [];
+
+        for(f in fields){
+            if( !f.access.has(AStatic) ) continue;
+
+            f = Trait._copyField(f);
+            switch(f.kind){
+                //method
+                case FFun(fn):
+                    //replace imported types with full types {
+                        //function body
+                        fn.expr = FixTools.fixExpr(fn.expr);
+                        //arguments
+                        for (a in fn.args) a.type = FixTools.fixComplexType(a.type);
+                        //type parameters
+                        for(i in 0...fn.params.length){
+                            FixTools.fixTypeParam(fn.params[i]);
+                        }
+                        //constructor can't have a return value
+                        if( f.name == 'new' ){
+                            fn.ret = null;
+                        }else{
+                            //function type
+                            fn.ret = FixTools.fixComplexType(fn.ret);
+                        }
+                    //}
+                //variables
+                case FVar(t,e):
+                    f.kind = FVar(FixTools.fixComplexType(t), FixTools.fixExpr(e));
+                //properties
+                case FProp(get,set,t,e):
+                    f.kind = FProp(get, set, FixTools.fixComplexType(t), FixTools.fixExpr(e));
+            }//switch(kind)
+            statics.push(f);
+        }
+
+        return statics;
+    }//function fixStatics()
+
 
     /**
     * Replace short types with full types

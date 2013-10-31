@@ -24,7 +24,7 @@ interface TChef extends ITrait{
         //also this is allowed
         var inc : Int = Trait.self().SOME_VAR + 1;
 
-        trace("I am called from " + Type.getClassName(cls));
+        trace("I am declared in people.jobs.TChef and called from " + Type.getClassName(cls));
     }//function inheritedStaticMethod()
 
 

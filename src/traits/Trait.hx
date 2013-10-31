@@ -94,8 +94,11 @@ class Trait {
 #if macro
     //traits fields
     static private var _fields : TraitsMap;
-    /** if class implements several traits, compiler will call `build` for such class several times. */
-    static private var _processed : Map<String,Bool> = new Map();
+    /**
+    * if class implements several traits, compiler will call `build` for such class several times.
+    * this also keeps static fields to be inherited by subclasses
+    **/
+    static private var _processed : Map<String,Array<Field>> = new Map();
 
 
     /**
@@ -165,6 +168,7 @@ class Trait {
                     //}
 
                     #if !display
+                    if( !Context.defined('display') ){
                         //create field for "Trait.parent()" calls for traits' methods with bodies
                         if( fn.expr != null ){
                             var pField : Field = Trait._copyField(f);
@@ -172,6 +176,7 @@ class Trait {
                             pField.access.remove(AOverride);
                             pFields.push(pField);
                         }
+                    }
                     #end
                 //variables
                 case FVar(t,e):
@@ -268,6 +273,19 @@ class Trait {
         //trait field structure
         var tfield : Field;
 
+        //fix types for own static fields
+        var statics : Array<Field> = FixTools.fixStatics(fields);
+        //add static fields from parent
+        var superClass : Dynamic = (Reflect.hasField(cls, 'superClass') ? Reflect.field(cls, 'superClass') : null);
+        if( superClass != null ){
+            var superName = classpath(superClass.t.get());
+            for(add in TTools.getUniqueFields(Trait._processed.get(superName), fields)){
+                statics.push(add);
+                fields.push(add);
+            }
+        }
+
+        var fieldCopy : Field;
         for(trait in interfaces){
             tfm = _get(trait.t.get());
 
@@ -275,6 +293,7 @@ class Trait {
             if( tfm != null ){
                 //real fields
                 for(fname in tfm.self.keys()){
+                    fieldCopy = null;
                     dfield = dfm.get(fname);
                     tfield = tfm.self.get(fname);
                     //if descendant does not have such field, copy trait field
@@ -282,13 +301,18 @@ class Trait {
                         switch(tfield.kind){
                             //methods
                             case FFun(f):
-                                if( f.expr != null ) fields.push(_copyField(tfield));
+                                if( f.expr != null ) fieldCopy = _copyField(tfield);
                             //other
                             case _:
-                                var f = _copyField(tfield);
-                                fields.push(f);
-                                dfm.set(f.name, f);
+                                fieldCopy = _copyField(tfield);
+                                dfm.set(fieldCopy.name, fieldCopy);
                         }//switch(tfield.kind)
+                        if( fieldCopy != null ){
+                            fields.push(fieldCopy);
+                            if( fieldCopy.access.has(AStatic) ) {
+                                statics.push(fieldCopy);
+                            }
+                        }
                     //descendant has such field.
                     }else{
                         //Check compatibility
@@ -296,7 +320,6 @@ class Trait {
                             Context.error(cls.name + "." + dfield.name + " type does not match " + trait.t.toString() + "." + tfield.name, Context.currentPos());
                         }
                         _handleParentCalls(cls, trait.t, dfield);
-                // if( fname == "tryToMove" && cls.name == "GoblinChar" && trait.t.toString() == "maze.traits.TWalker" ) trace(dfield);
                     }
                 }//for()
 
@@ -307,6 +330,9 @@ class Trait {
 
             }//if( tfm != null )
         }//for(interfaces)
+
+        //remember this class
+        Trait._processed.set(Trait.classpath(cls), statics);
 
         return fields;
     }//function _processDescendant()
@@ -366,9 +392,8 @@ class Trait {
     *
     */
     static private function _handleParentCalls (cls:ClassRef, trait:Ref<ClassType>, field:Field) : Void {
-        #if display
-            return;
-        #end
+        #if display return; #end
+        if( Context.defined('display') ) return;
 
         _trait = trait;
 

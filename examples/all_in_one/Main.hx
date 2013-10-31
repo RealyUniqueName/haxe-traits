@@ -1,6 +1,8 @@
 package;
 
 import people.Jack;
+import people.Timmy;
+import people.TimmyReflection;
 
 
 
@@ -31,6 +33,8 @@ class Main {
         trace(Jack.INHERITED_STATIC_FIELD + " acquired as people.Jack.INHERITED_STATIC_FIELD");
 
         Jack.inheritedStaticMethod();
+        Timmy.inheritedStaticMethod();
+        TimmyReflection.inheritedStaticMethod();
     }//function main()
 
 /*******************************************************************************
