@@ -5,7 +5,7 @@ package traits;
 * Description
 *
 */
-@:autoBuild(traits.BuildMacro.build())
+#if !macro @:autoBuild(traits.BuildMacro.build()) #end
 interface ITrait {
 
 }//interface ITrait
