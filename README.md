@@ -1,3 +1,7 @@
+DEPRECATED
+===========
+It is not recommended to use this project anymore.
+
 Traits for Haxe
 ===========
 
