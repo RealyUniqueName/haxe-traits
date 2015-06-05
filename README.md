@@ -1,6 +1,6 @@
 DEPRECATED
 ===========
-It is not recommended to use this project anymore.
+It is not recommended to use this project anymore. Use [tink_lang](https://github.com/haxetink/tink_lang#partial-implementation) instead.
 
 Traits for Haxe
 ===========
